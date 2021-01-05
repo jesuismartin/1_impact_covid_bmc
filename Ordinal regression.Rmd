@@ -1,0 +1,158 @@
+---
+title: "Data analysis_BMC Public Health"
+author: "Martin Tušl"
+date: "12/22/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, error=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Packages used for the analysis
+```{r}
+library(tidyverse)
+library(MASS)
+library(car)
+```
+
+#### Checking for multicollinearity
+```{r}
+m <- read.csv("~/Desktop/COVID-19 study/R/Covid-19/data.csv", header=TRUE)
+m$Work.wors <- as.numeric(m$Work.wors)
+m$Age.cat <- as.factor(m$Age.cat)
+m$Contract.change <- as.factor(m$Contract.change)
+m$Ovrl_HO <- as.factor(m$Ovrl_HO)
+m$Freetime <- as.factor(m$Freetime)
+m$Work_time <- as.factor(m$Work_time)
+m$Caring_duties <- as.factor(m$Caring_duties)
+mod1 <- lm(Work.wors ~ Gender + Country + Age.cat + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "No HO") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = m)
+summary(mod1)
+exp(coefficients(mod1))
+exp(confint(mod1))
+
+vif(mod1)
+```
+
+#### Ordinal regression analysis
+
+### Work life worsened as a dependent variable
+```{r}
+m$Work.wors <- as.ordered(m$Work.wors)
+m$Work.wors <- as.ordered(m$Work.wors)
+m$Work.imp <- as.ordered(m$Work.imp)
+m$Privat.wors <- as.ordered(m$Privat.wors)
+m$Privat.imp <- as.ordered(m$Privat.imp)
+ord1 <- polr(Work.wors ~ Gender + Country + Age.cat + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "No HO") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = m, Hess = TRUE)
+summary(ord1)
+```
+
+### Calculating p values, OR, and CI 
+```{r}
+ctable1 <- coef(summary(ord1))
+p <- pnorm(abs(ctable1[, "t value"]), lower.tail = F) * 2
+ctable1 <- cbind(ctable1, "p value" = p)
+ci1 <- confint(ord1)
+exp(coef(ord1))
+orci1 <- exp(cbind(OR = coef(ord1), ci1))
+dat1 <- data.frame(orci1, round(orci1, 2))
+dat2 <- data.frame(p,round(p, 4))
+```
+
+### Work life improved as a dependent variable
+```{r}
+ord2 <- polr(Work.imp ~ Gender + Country + Age.cat + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "No HO") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = m, Hess = TRUE)
+summary(ord2)
+```
+
+### Calculating p values, OR, and CI 
+```{r}
+ctable2 <- coef(summary(ord2))
+p <- pnorm(abs(ctable2[, "t value"]), lower.tail = F) * 2
+ctable2 <- cbind(ctable2, "p value" = p)
+ci2 <- confint(ord2)
+exp(coef(ord2))
+orci2 <- exp(cbind(OR = coef(ord2), ci2))
+round(orci1, 2)
+dat1 <- data.frame(orci2, round(orci2, 2))
+dat2 <- data.frame(p,round(p, 4))
+```
+
+### Private life worsened as a dependent variable
+```{r}
+ord3 <- polr(Privat.wors ~ Gender + Country + Age.cat + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "No HO") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = m, Hess = TRUE)
+summary(ord3)
+```
+
+### Calculating p values, OR, and CI 
+```{r}
+ctable3 <- coef(summary(ord3))
+p <- pnorm(abs(ctable3[, "t value"]), lower.tail = F) * 2
+ctable2 <- cbind(ctable3, "p value" = p)
+ci3 <- confint(ord3)
+exp(coef(ord3))
+orci3 <- exp(cbind(OR = coef(ord3), ci3))
+dat1 <- data.frame(orci3, round(orci3, 2))
+dat2 <- data.frame(p,round(p, 4))
+```
+
+### Privat life improved as a dependent variable
+```{r}
+ord4 <- polr(Privat.imp ~ Gender + Country + Age.cat + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "No HO") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = m, Hess = TRUE)
+summary(ord4)
+```
+
+### Calculating p values, OR, and CI
+```{r}
+ctable4 <- coef(summary(ord4))
+p <- pnorm(abs(ctable4[, "t value"]), lower.tail = F) * 2
+ctable4 <- cbind(ctable4, "p value" = p)
+ci4 <- confint(ord4)
+exp(coef(ord4))
+orci4 <- exp(cbind(OR = coef(ord4), ci4))
+round(orci4, 2)
+dat1 <- data.frame(orci4, round(orci4, 2))
+dat2 <- data.frame(p,round(p, 4))
+```
+
+### Mental well-being as a dependent variable
+```{r}
+m$mwb.cat <- as.factor(m$mwb.cat)
+ord5 <- polr(mwb.cat ~ Gender + Country + Age.cat + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "No HO") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged") + Work.wors + Work.imp.3 + Privat.wors.3 + Privat.imp.3, data = m, Hess = TRUE)
+summary(ord5)
+```
+
+### Calculating p values, OR, and CI
+```{r}
+ctable5 <- coef(summary(ord5))
+p <- pnorm(abs(ctable5[, "t value"]), lower.tail = F) * 2
+ctable5 <- cbind(ctable5, "p value" = p)
+ci5 <- confint(ord5)
+exp(coef(ord5))
+orci5 <- exp(cbind(OR = coef(ord5), ci5))
+round(orci5, 2)
+dat2 <- data.frame(p,round(p, 4))
+dat1 <- data.frame(orci5, round(orci5, 2))
+```
+
+### Self rated health as a dependent variable
+```{r}
+m$srh <- as.factor(m$srh)
+ord6 <- polr(srh ~ Gender + Country + Age.cat + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "No HO") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged") + Work.wors + Work.imp + Privat.wors + Privat.imp, data = m, Hess = TRUE)
+summary(ord6)
+```
+
+### Calculating p values, OR, and CI
+```{r}
+ctable6 <- coef(summary(ord6))
+p <- pnorm(abs(ctable6[, "t value"]), lower.tail = F) * 2
+ctable6 <- cbind(ctable6, "p value" = p)
+ci6 <- confint(ord6)
+exp(coef(ord6))
+orci6 <- exp(cbind(OR = coef(ord6), ci6))
+round(orci6, 2)
+dat2 <- data.frame(p,round(p, 4))
+dat1 <- data.frame(orci6, round(orci6, 2))
+```
