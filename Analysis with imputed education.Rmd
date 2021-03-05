@@ -1,0 +1,129 @@
+---
+title: "Regression analysis with imputed missing data for education"
+author: "Martin Tušl"
+date: "2/19/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+### Data upload
+df <- read.csv("~/Desktop/R/Projects/Covid-19 (Wave 4)/data/Wave4_edu_na.csv", header=TRUE)
+
+### Packages
+library(tidyverse)
+library(mice)
+library(VIM)
+library(epiDisplay)
+library(corrplot)
+library(Hmisc)
+library(MASS)
+```
+
+1) Data preparation
+```{r}
+## Recoding
+df <- df %>%
+  mutate_if(is.character, as.factor)
+df <- df %>%
+  mutate_at(vars(Work.wors, Work.imp, Privat.wors, Privat.imp, mwb.cat, srh), as.ordered)
+df <- df %>%
+  mutate_at(vars(Gender, Country, Liv.situation, Contract.change, Ovrl_HO, Work.wors.3, Work.imp.3, Privat.wors.3, Privat.imp.3), as.factor)
+df$Contract.change <- factor(df$Contract.change, levels = c("1", "2", "3", "4"),
+                             labels = c("No change", "Short-time reduced", "Short-time 0", "Job loss"))
+df$Ovrl_HO <- factor(df$Ovrl_HO, levels = c("1", "2", "3"),
+                             labels = c("None", "Experienced", "New"))
+```
+
+2) Data imputation (education)
+```{r}
+## Distribution of education with n = 924 NAs
+tab1(df$edu.na)
+
+## Imputing missing data for Education
+df1 <- df %>%
+  dplyr::select(-c(X, X.1, ID.2, ID.3, Age.cat, Work_time, Freetime, Caring_duties, Work.wors.3, Work.imp.3, Privat.wors.3, Privat.imp.3))
+
+impute <- mice(df1, m = 5, maxit = 50, meth='pmm', seed = 500)
+new_df <- complete(impute, 1)
+```
+
+2) Correlation matrix with imputed education
+```{r}
+## Wave 4 analysis with imputed education data
+new_df2 <- new_df
+new_df2[,] = lapply(new_df2[,], as.numeric)
+
+colnames(new_df2) <- c("Gender", "Living situation", "Work worsened", "Work improved", "Private worsened", "Private improved", "Contract change", "Work time", "Caring duties", "Leisure time", "MWB","Home-office", "SRH", "Country", "Age", "Education")
+col_order <- c("Gender", "Age", "Country", "Education", "Living situation", "Contract change", "Work time", "Leisure time", "Caring duties", "Home-office", "Work worsened", "Work improved", "Private worsened", "Private improved", "MWB", "SRH")
+new_df2 <- new_df2[, col_order]
+
+mat2 <- rcorr(as.matrix(new_df2))
+
+corrplot(mat2$r, method = "number", type = "upper", tl.col = "black", 
+         p.mat = mat2$P, sig.level = 0.01, insig = "blank")
+```
+
+3) Ordinal regression with imputed education
+```{r}
+## Ordinal regression with education
+df$edu.b <- new_df$edu.na
+df$edu_cat.b <- df$edu.b
+df$edu_cat.b <- recode(df$edu_cat.b, "2" = 1, "3" = 2, "4" = 2, "5" = 3, "6" = 3)
+df$edu_cat.b <- factor(df$edu_cat.b, levels = c("1", "2", "3"),
+                     labels = c("Primary", "Secondary", "Tertiary"))
+
+# Work life worsened
+ord1 <- polr(Work.wors ~ Gender + Country + Age.cat + edu_cat.b + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "None") + relevel(Work_time, ref = "Unchanged") + relevel(Freetime, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = df, Hess = TRUE)
+ctable1 <- coef(summary(ord1))
+ci1 <- confint(ord1)
+orci1 <- exp(cbind(OR = coef(ord1), ci1))
+dat1 <- data.frame(orci1, round(orci1, 2))
+write.csv(dat1, file = "work_wors_r.csv")
+
+# Work life improved
+ord2 <- polr(Work.imp ~ Gender + Country + Age.cat + edu_cat.b + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "None") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = df, Hess = TRUE)
+ctable2 <- coef(summary(ord2))
+ci2 <- confint(ord2)
+orci2 <- exp(cbind(OR = coef(ord2), ci2))
+dat2 <- data.frame(orci2, round(orci2, 2))
+write.csv(dat2, file = "work_imp_r.csv")
+
+# Private life worsened
+ord3 <- polr(Privat.wors ~ Gender + Country + Age.cat + edu_cat.b + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "None") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = df, Hess = TRUE)
+ctable3 <- coef(summary(ord3))
+ci3 <- confint(ord3)
+orci3 <- exp(cbind(OR = coef(ord3), ci3))
+dat3 <- data.frame(orci3, round(orci3, 2))
+write.csv(dat3, file = "privat_wors_r.csv")
+
+# Private life improved
+ord4 <- polr(Privat.imp ~ Gender + Country + Age.cat + edu_cat.b + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "None") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged"), data = df, Hess = TRUE)
+ctable4 <- coef(summary(ord4))
+ci4 <- confint(ord4)
+orci4 <- exp(cbind(OR = coef(ord4), ci4))
+dat4 <- data.frame(orci4, round(orci4, 2))
+write.csv(dat4, file = "privat_imp_r.csv")
+
+# Mental well-being
+ord5 <- polr(mwb.cat ~ Gender + Country + Age.cat + edu_cat.b + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "None") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged") + Work.wors.3 + Work.imp.3 + Privat.wors.3 + Privat.imp.3, data = df, Hess = TRUE)
+ctable5 <- coef(summary(ord5))
+ci5 <- confint(ord5)
+orci5 <- exp(cbind(OR = coef(ord5), ci5))
+dat5 <- data.frame(orci5, round(orci5, 2))
+write.csv(dat5, file = "mwb_r.csv")
+
+# Self-rated health
+ord6 <- polr(srh ~ Gender + Country + Age.cat + edu_cat.b + relevel(Contract.change, ref = "No change") + Liv.situation + relevel(Ovrl_HO, ref = "None") + relevel(Freetime, ref = "Unchanged") + relevel(Work_time, ref = "Unchanged") + relevel(Caring_duties, ref = "Unchanged") + Work.wors.3 + Work.imp.3 + Privat.wors.3 + Privat.imp.3, data = df, Hess = TRUE)
+ctable6 <- coef(summary(ord6))
+ci6 <- confint(ord6)
+orci6 <- exp(cbind(OR = coef(ord6), ci6))
+dat6 <- data.frame(orci6, round(orci6, 2))
+write.csv(dat6, file = "srh_r.csv")
+```
+
