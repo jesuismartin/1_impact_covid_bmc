@@ -1,0 +1,23 @@
+"","p","round.p..4."
+"GenderMale",0.55100415425202,0.551
+"CountrySwitzerland",0.0978391344138918,0.0978
+"Age.cat31-40",0.0642254921483471,0.0642
+"Age.cat41-50",0.0766766698429264,0.0767
+"Age.cat51-60",0.0529181798374401,0.0529
+"Age.cat61-65",0.00205362381475635,0.0021
+"relevel(Contract.change, ref = ""No change"")Job loss",0.583955302856988,0.584
+"relevel(Contract.change, ref = ""No change"")Short-time 0",0.710133450531803,0.7101
+"relevel(Contract.change, ref = ""No change"")Short-time reduced",0.114026894728434,0.114
+"Liv.situationPartner/Family/Flatshare",1.59282681301581e-22,0
+"relevel(Ovrl_HO, ref = ""No HO"")Experienced HO",0.848305485504409,0.8483
+"relevel(Ovrl_HO, ref = ""No HO"")New HO",0.498367066952523,0.4984
+"relevel(Freetime, ref = ""Unchanged"")Decreased",3.82203493612247e-17,0
+"relevel(Freetime, ref = ""Unchanged"")Increased",0.0127676778269419,0.0128
+"relevel(Work_time, ref = ""Unchanged"")Decreased",0.381264513856263,0.3813
+"relevel(Work_time, ref = ""Unchanged"")Increased",0.36559327471759,0.3656
+"relevel(Caring_duties, ref = ""Unchanged"")Decreased",0.00238327708230976,0.0024
+"relevel(Caring_duties, ref = ""Unchanged"")Increased",0.00241093764187161,0.0024
+"1|2",1.75924676445969e-17,0
+"2|3",7.74740110539226e-05,1e-04
+"3|4",0.016225303593154,0.0162
+"4|5",9.63491734013069e-28,0

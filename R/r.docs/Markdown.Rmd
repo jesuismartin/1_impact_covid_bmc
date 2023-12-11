@@ -1,0 +1,48 @@
+---
+title: Markdown file basic functions
+author: "Martin Tušl"
+date: "12/18/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Headings
+
+# Level 1
+
+## Level 2
+
+### Level 3
+
+#### Level 4
+
+## Bullet points
+
+* First main bullet point
+  + a sub-bullet point
+  + a sub-bullet point
+    - a sub-sub-bullet point
+* Second main bullet point
+
+## Playing with the fonts
+
+*italic text*
+
+**bold text**
+
+Text^supersript^
+
+Text~subscript~
+
+## Inserting an image
+
+
+## Hyperlinks
+
+[text_describing_link](url)
+
